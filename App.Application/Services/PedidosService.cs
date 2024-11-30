@@ -2,7 +2,9 @@
 using App.Application.ViewModels.Request;
 using App.Application.ViewModels.Response;
 using App.Domain.Interfaces;
+using App.Domain.Models;
 using Domain.Base;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,6 +37,27 @@ namespace Application.Services
                 return false;
             pedido.PedidoPagamentoId = (int)EnumPedidoPagamento.Pago;
             return await _repository.UpdatePedidoAsync(pedido);
+        }
+
+        public async Task<Pedido> GetPedidoById(FiltroPedidoById filtro)
+        {
+            var pedido = await _repository.GetPedidosByIdAsync(filtro.idPedido);
+            if (pedido == null)
+                return null;
+
+            return new Pedido(pedido);
+        }
+
+        public async Task<FiltroPedidoById> PostPedido(PostPedidoRequest input)
+        {
+            var item = new PedidoBD(input.IdCliente, input.DataPedido, input.PedidoStatusId, input.PedidoPagamentoId);
+
+            await _repository.PostPedido(item);
+
+            return new FiltroPedidoById
+            {
+                idPedido = item.Id,
+            };
         }
     }
 }

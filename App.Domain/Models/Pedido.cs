@@ -23,6 +23,7 @@ namespace App.Domain.Models
             DataPedido = dataPedido;
             PedidoStatusId = pedidoStatusId;
             PedidoPagamentoId = pedidoPagamentoId;
+            Produtos = new List<Produto>();
             // ValidateEntity();
         }
 

@@ -9,6 +9,9 @@ namespace App.Application.Interfaces
     {
         Task<bool> UpdatePedido(FiltroPedidoById filtro);
         Task<IList<Pedido>> GetPedidos(FiltroPedidos filtro);
+        Task<Pedido> GetPedidoById(FiltroPedidoById filtro);
+
+        Task<FiltroPedidoById> PostPedido(PostPedidoRequest input);
 
     }
 }

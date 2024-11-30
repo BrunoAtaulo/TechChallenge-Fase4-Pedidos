@@ -88,6 +88,60 @@ namespace Api.Controllers
         }
         #endregion
 
+        #region [GET/pedidos/idPedido]
+        [SwaggerResponse(200, "Consulta executada com sucesso!", typeof(Pedido))]
+        [SwaggerResponse(204, "Requisição concluída, porém não há dados de retorno!")]
+        [SwaggerResponse(400, "Condição prévia dada em um ou mais dos campos avaliado como falsa.")]
+        [HttpGet("{idPedido}")]
+        [SwaggerOperation(
+            Summary = "Busca um pedido.",
+             Description = @"Endpoint para buscar um pedido que foi realizado. A busca pode ser feita pelos filtros abaixo:</br></br>
+                               <b>Parâmetros de entrada:</b></br></br>                           
+                                &bull; <b>idPedido</b>:  Id do pedido. &rArr; <font color='red'><b>Obrigatório</b></font><br>
+
+
+               ",
+            Tags = new[] { "Pedidos" }
+        )]
+        [Consumes("application/json")]
+        public async Task<IActionResult> GetPedidos([FromRoute] FiltroPedidoById filtro)
+        {
+
+            var rtn = await _pedidosService.GetPedidoById(filtro);
+            if (rtn == null)
+                return NoContent();
+            return Ok(rtn);
+        }
+        #endregion
+
+        #region POST/pedidos
+        [SwaggerResponse(201, "A solicitação foi atendida e resultou na criação de um novo pedido.", typeof(int))]
+        [SwaggerResponse(400, "A solicitação não pode ser entendida pelo servidor devido a sintaxe malformada!")]
+        [SwaggerResponse(401, "Requisição requer autenticação do usuário!")]
+        [SwaggerResponse(403, "Privilégios insuficientes!")]
+        [SwaggerResponse(404, "O recurso solicitado não existe!")]
+        [SwaggerResponse(400, "Condição prévia dada em um ou mais dos campos avaliado como falsa!")]
+        [SwaggerResponse(500, "Servidor encontrou uma condição inesperada!")]
+        [HttpPost("")]
+        [SwaggerOperation(
+            Summary = "Cria um novo pedido com lista de produtos.",
+            Description = @"Endpoint para criar um novo pedido com base no idCliente e na lista de produtos fornecida no corpo da requisição. Retorna o id do pedido criado.",
+            Tags = new[] { "Pedidos" }
+        )]
+        [Consumes("application/json")]
+        public async Task<IActionResult> PostPedido([FromBody] PostPedidoRequest input)
+        {
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var idPedidoCriado = await _pedidosService.PostPedido(input);
+
+            return new ObjectResult(idPedidoCriado) { StatusCode = StatusCodes.Status201Created };
+        }
+        #endregion
+
+
 
     }
 }

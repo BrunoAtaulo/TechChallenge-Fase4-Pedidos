@@ -3,6 +3,7 @@ using App.Infra.Data.Context;
 using Domain.Base;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 namespace App.Domain.Interfaces
@@ -45,7 +46,16 @@ namespace App.Domain.Interfaces
             return await _dbContext.SaveChangesAsync() > 0;
         }
 
+        public async Task<PedidoBD> GetPedidosById(int idPedido)
+        {
+            return await _dbContext.Pedidos.FirstOrDefaultAsync(p => p.Id == idPedido);
+        }
 
+        public async Task PostPedido(PedidoBD Pedido)
+        {
+            await _dbContext.Pedidos.AddAsync(Pedido);
+            await _dbContext.SaveChangesAsync();
+        }
 
 
     }
