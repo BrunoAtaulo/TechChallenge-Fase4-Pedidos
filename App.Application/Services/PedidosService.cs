@@ -92,25 +92,5 @@ namespace Application.Services
 
         }
 
-        public async Task<Pedido> GetPedidoById(FiltroPedidoById filtro)
-        {
-            var pedido = await _repository.GetPedidosByIdAsync(filtro.idPedido);
-            if (pedido == null)
-                return null;
-
-            return new Pedido(pedido);
-        }
-
-        public async Task<FiltroPedidoById> PostPedido(PostPedidoRequest input)
-        {
-            var item = new PedidoBD(input.IdCliente, input.DataPedido, input.PedidoStatusId, input.PedidoPagamentoId);
-
-            await _repository.PostPedido(item);
-
-            return new FiltroPedidoById
-            {
-                idPedido = item.Id,
-            };
-        }
     }
 }
