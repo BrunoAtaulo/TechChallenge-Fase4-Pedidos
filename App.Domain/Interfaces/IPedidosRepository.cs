@@ -11,6 +11,9 @@ namespace App.Domain.Interfaces
         Task<IList<PedidoBD>> GetPedidosAsync(int? idPedido, EnumPedidoStatus? pedidoStatus, EnumPedidoPagamento? pedidoPagamento);
         Task<bool> UpdatePedidoAsync(PedidoBD pedido);
         Task<PedidoBD> GetPedidosByIdAsync(int idPedido);
+        Task<PedidoBD> GetPedidosById(int idPedido);
+        Task PostPedido(PedidoBD Pedido);
+
 
 
     }

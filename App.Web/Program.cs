@@ -1,6 +1,7 @@
 
 using Api.Middleware;
 using App.Infra.CrossCutting.IoC;
+using Application.Services;
 using Microsoft.OpenApi.Models;
 
 
@@ -40,7 +41,12 @@ builder.Services.AddSwaggerGen(c =>
     c.EnableAnnotations();
 });
 
-
+// Configure HttpClient to communicate API PAGAMENTOS
+builder.Services.AddHttpClient<PedidosService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:6002/");  // URL da API de Pagamentos (ALTERAR)
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 //IOC
 NativeInjectorBootStrapper.RegisterServices(builder.Services, builder.Configuration);
@@ -65,7 +71,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-//app.MapGet("/", () => "Bem vindo ao Lambda Auth Lanches BD Fiap");
 
 
 app.Run();

@@ -45,7 +45,6 @@ namespace App.Infra.CrossCutting.IoC
 
 
 
-
         }
     }
 }
