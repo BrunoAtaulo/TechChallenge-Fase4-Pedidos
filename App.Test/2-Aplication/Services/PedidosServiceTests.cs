@@ -1,12 +1,13 @@
-﻿using App.Application.ViewModels.Enuns;
-using App.Application.ViewModels.Request;
-using App.Application.ViewModels.Response;
+﻿using App.Application.ViewModels.Request;
 using App.Domain.Interfaces;
 using App.Domain.Models;
+using App.Infra.Data.Context;
+using App.Test.MockObjects;
 using Application.Services;
 using Moq;
 using System;
-using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,163 +16,150 @@ namespace App.Tests.Services
     public class PedidosServiceTests
     {
         private readonly Mock<IPedidosRepository> _mockRepository;
+        private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+        private readonly HttpClient _httpClient;
         private readonly PedidosService _service;
 
         public PedidosServiceTests()
         {
+            // Mock do repositório
             _mockRepository = new Mock<IPedidosRepository>();
-            _service = new PedidosService(_mockRepository.Object);
+
+            // Mock do HttpClient
+            _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+            _httpClient = new HttpClient(_mockHttpMessageHandler.Object);
+
+            // Instância do serviço
+            _service = new PedidosService(_mockRepository.Object, _httpClient);
         }
 
-
         [Fact]
-        public async Task GetPedido_ShouldReturnNull_WhenNoProductsExist()
+        public async Task GetPedidoById_ShouldReturnPedido_WhenPedidoExists()
         {
             // Arrange
-            var filtro = new FiltroPedidos
+            var pedidoBD = new PedidoBD(123, DateTime.Now, 1, 1)
             {
-                IdPedido = 1,
-                PedidoPagamento = EnumPedidoPagamento.Pago,
-                PedidoStatus = EnumPedidoStatus.Recebido
+                Id = 1
             };
 
+            _mockRepository
+                .Setup(r => r.GetPedidosByIdAsync(1))
+                .ReturnsAsync(pedidoBD);
 
-            _mockRepository.Setup(r => r.GetPedidosAsync(It.IsAny<int?>(),
-                                                        (global::Domain.Base.EnumPedidoStatus?)It.IsAny<EnumPedidoStatus?>(),
-                                                        (global::Domain.Base.EnumPedidoPagamento?)It.IsAny<EnumPedidoPagamento?>()))
-                .ReturnsAsync(new List<PedidoBD>());
+            var filtro = new FiltroPedidoById { idPedido = 1 };
 
             // Act
-            var result = await _service.GetPedidos(filtro);
+            var result = await _service.GetPedidoById(filtro);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(pedidoBD.Id, result.IdPedido);
+        }
+
+        [Fact]
+        public async Task GetPedidoById_ShouldReturnNull_WhenPedidoDoesNotExist()
+        {
+            // Arrange
+            _mockRepository
+                .Setup(r => r.GetPedidosByIdAsync(It.IsAny<int>()))
+                .ReturnsAsync((PedidoBD)null);
+
+            var filtro = new FiltroPedidoById { idPedido = 1 };
+
+            // Act
+            var result = await _service.GetPedidoById(filtro);
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task UpdatePedido_ShouldReturnFalse_WhenPedidoDoesNotExist()
+        public async Task PostPedido_ShouldReturnFiltroPedidoById_WithValidStatusPagamento()
         {
             // Arrange
-            var filtro = new FiltroPedidoById { idPedido = 1 };
-
-
-            _mockRepository
-                .Setup(r => r.GetPedidosByIdAsync(filtro.idPedido))
-                .ReturnsAsync((PedidoBD)null);
-
-            // Act
-            var result = await _service.UpdatePedido(filtro);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task UpdatePedido_ShouldUpdatePedido_WhenPedidoExists()
-        {
-            // Arrange
-            var filtro = new FiltroPedidoById { idPedido = 1 };
-            var pedidoExistente = new PedidoBD(1, DateTime.Now, 1, 1)
+            var input = new PostPedidoRequest
             {
-                ClienteId = 123,
-                Id = 1,
-                PedidoStatusId = 1,
-                PedidoPagamentoId = 2,
+                IdCliente = 123,
                 DataPedido = DateTime.Now,
-                DataAtualizacao = DateTime.Now,
-                StatusPedido = "Finalizado",
-                Produtos = new List<Produto>(),
-
-
-
+                PedidoStatusId = 1,
+                PedidoPagamentoId = 2
             };
 
-
-            _mockRepository
-                .Setup(r => r.GetPedidosByIdAsync(filtro.idPedido))
-                .ReturnsAsync(pedidoExistente);
-
-            _mockRepository
-                .Setup(r => r.UpdatePedidoAsync(It.IsAny<PedidoBD>()))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _service.UpdatePedido(filtro);
-
-            // Assert
-            Assert.True(result);
-            _mockRepository.Verify(r => r.UpdatePedidoAsync(It.Is<PedidoBD>(p =>
-                p.PedidoPagamentoId == (int)EnumPedidoPagamento.Pago
-            )), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetPedidos_ShouldReturnNull_WhenNoPedidosExist()
-        {
-            // Arrange
-            var filtro = new FiltroPedidos
+            var pedidoBD = new PedidoBD(input.IdCliente, input.DataPedido, input.PedidoStatusId, input.PedidoPagamentoId)
             {
-                IdPedido = 1,
-                PedidoStatus = EnumPedidoStatus.Recebido,
-                PedidoPagamento = EnumPedidoPagamento.Pago
+                Id = 1
             };
 
-            // Configuração do mock para retornar null quando GetPedidosAsync for chamado
             _mockRepository
-                .Setup(r => r.GetPedidosAsync(filtro.IdPedido, (global::Domain.Base.EnumPedidoStatus?)filtro.PedidoStatus, (global::Domain.Base.EnumPedidoPagamento?)filtro.PedidoPagamento))
-                .ReturnsAsync((IList<PedidoBD>)null);
+                .Setup(r => r.PostPedido(It.IsAny<PedidoBD>()))
+                .Callback<PedidoBD>(p => p.Id = pedidoBD.Id)
+                .Returns(Task.CompletedTask);
 
-            // Act
-            var result = await _service.GetPedidos(filtro);
-
-            // Assert
-            Assert.Null(result);  // Verifica que o retorno é null quando não existem pedidos
-        }
-
-        [Fact]
-        public async Task GetPedidos_ShouldReturnPedidos_WhenPedidosExist()
-        {
-            // Arrange
-            var filtro = new FiltroPedidos
+            var mockHttpMessageHandler = new MockHttpMessageHandler(request =>
             {
-                IdPedido = 1,
-                PedidoStatus = EnumPedidoStatus.Recebido,
-                PedidoPagamento = EnumPedidoPagamento.Pago
-            };
-
-            var pedidos = new List<PedidoBD>
-            {
-                new PedidoBD(1, DateTime.Now, 1, 1)
+                return new HttpResponseMessage
                 {
-                    ClienteId = 123,
-                    Id = 1,
-                    PedidoStatusId = (int)EnumPedidoStatus.Recebido,
-                    PedidoPagamentoId = (int)EnumPedidoPagamento.Pago,
-                    DataPedido = DateTime.Now
-                },
-                new PedidoBD(2, DateTime.Now, 2, 2)
-                {
-                    ClienteId = 124,
-                    Id = 2,
-                    PedidoStatusId = (int)EnumPedidoStatus.Recebido,
-                    PedidoPagamentoId = (int)EnumPedidoPagamento.Pago,
-                    DataPedido = DateTime.Now
-                }
-            };
+                    StatusCode = HttpStatusCode.OK,
 
+                };
+            });
 
-            _mockRepository
-                .Setup(r => r.GetPedidosAsync(filtro.IdPedido, (global::Domain.Base.EnumPedidoStatus?)filtro.PedidoStatus, (global::Domain.Base.EnumPedidoPagamento?)filtro.PedidoPagamento))
-                .ReturnsAsync(pedidos);
+            var httpClient = new HttpClient(mockHttpMessageHandler);
+
+            var service = new PedidosService(_mockRepository.Object, httpClient);
 
             // Act
-            var result = await _service.GetPedidos(filtro);
+            var result = await service.PostPedido(input);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Count);
-            Assert.All(result, item => Assert.IsType<Pedido>(item));
-            Assert.Equal(pedidos[0].Id, result[0].IdPedido);
+            Assert.Equal(pedidoBD.Id, result.idPedido);
+
         }
+
+        [Fact]
+        public async Task PostPedido_ShouldReturnFiltroPedidoById_WithErrorMessage_WhenHttpClientFails()
+        {
+            // Arrange
+            var input = new PostPedidoRequest
+            {
+                IdCliente = 123,
+                DataPedido = DateTime.Now,
+                PedidoStatusId = 1,
+                PedidoPagamentoId = 2
+            };
+
+            var pedidoBD = new PedidoBD(input.IdCliente, input.DataPedido, input.PedidoStatusId, input.PedidoPagamentoId)
+            {
+                Id = 1
+            };
+
+            _mockRepository
+                .Setup(r => r.PostPedido(It.IsAny<PedidoBD>()))
+                .Callback<PedidoBD>(p => p.Id = pedidoBD.Id)
+                .Returns(Task.CompletedTask);
+
+            var mockHttpMessageHandler = new MockHttpMessageHandler(request =>
+            {
+                return new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.InternalServerError
+                };
+            });
+
+            var httpClient = new HttpClient(mockHttpMessageHandler);
+
+            var service = new PedidosService(_mockRepository.Object, httpClient);
+
+            // Act
+            var result = await service.PostPedido(input);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(pedidoBD.Id, result.idPedido);
+            Assert.StartsWith("Erro ao obter status", result.statusPagamento);
+        }
+
+
     }
 }

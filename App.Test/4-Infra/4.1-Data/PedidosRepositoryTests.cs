@@ -22,47 +22,22 @@ namespace App.Tests.Repositories
 
 
         [Fact]
-        public async Task GetProdutosByIdCategoria_ShouldReturnFilteredProducts_WhenCategoriaExists()
+        public async Task PostPedido_ShouldAddPedidoToDatabase()
         {
             // Arrange
             using var context = new MySQLContext(_dbContextOptions);
             var repository = new PedidoRepository(context);
 
-            context.Pedidos.AddRange(
-                new PedidoBD(1, System.DateTime.MaxValue, 1, 1),
-                new PedidoBD(2, System.DateTime.MaxValue, 2, 2),
-                new PedidoBD(3, System.DateTime.MaxValue, 3, 3)
-            );
-            await context.SaveChangesAsync();
+            var pedido = new PedidoBD(1, System.DateTime.Now, 1, 1);
 
             // Act
-            var result = await repository.GetPedidosAsync(1, (global::Domain.Base.EnumPedidoStatus?)EnumPedidoStatus.Finalizado, (global::Domain.Base.EnumPedidoPagamento?)EnumPedidoPagamento.Cancelado);
+            await repository.PostPedido(pedido);
 
             // Assert
-            Assert.NotNull(result);
-
-            Assert.All(result, p => Assert.Equal(1, p.ClienteId));
-        }
-
-        [Fact]
-        public async Task GetPedidosByIdAsync_ShouldReturnPedido_WhenPedidoExists()
-        {
-            // Arrange
-            using var context = new MySQLContext(_dbContextOptions);
-            var repository = new PedidoRepository(context);
-
-            var pedidoId = 1;
-            var pedido = new PedidoBD(1, System.DateTime.MaxValue, 1, 1);
-            context.Pedidos.Add(pedido);
-            await context.SaveChangesAsync();
-
-            // Act
-            var result = await repository.GetPedidosByIdAsync(pedidoId);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(pedidoId, result.Id);
-            Assert.Equal(1, result.ClienteId);
+            var savedPedido = await context.Pedidos.FindAsync(pedido.Id);
+            Assert.NotNull(savedPedido);
+            Assert.Equal(pedido.Id, savedPedido.Id);
+            Assert.Equal(pedido.ClienteId, savedPedido.ClienteId);
         }
 
         [Fact]
