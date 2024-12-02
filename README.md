@@ -11,7 +11,6 @@
 
 
 Sonar
-
 ![image1](assets/cobertura.png)
 
 Teste unitário
