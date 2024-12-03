@@ -27,10 +27,15 @@ Quando disparamos a Github Action, é realizado o build da aplicação e deploy 
 ![image](assets/arquitetura.png)
 
 
-Sonar
+## Sonar
+
+Utilizamos a ferramenta SonarCloud para análise de código e cobertura de testes. Para este microsserviço, atingimos acima de 80% de cobertura, conforme abaixo:
+
 ![image1](assets/cobertura.png)
 
-Teste unitário
+## Teste unitário
+
+Utilizamos a ferramenta xUnit para realizar os testes unitários
 
 ![image2](assets/image2.png)
 ![image3](assets/image3.png)
